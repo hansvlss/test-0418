@@ -1,9 +1,9 @@
 name: Sync and Deploy BPB Worker
 
 on:
-  workflow_dispatch: # 手动同步按钮
+  workflow_dispatch: # 支持手动运行
   schedule:
-    - cron: "0 1 * * *" # 每天凌晨1点同步
+    - cron: "0 1 * * *" # 每天凌晨1点自动同步
 
 permissions:
   contents: write
@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 保证能正确拉取历史
+          fetch-depth: 0
 
-      - name: Set up Node.js environment
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
@@ -26,17 +26,16 @@ jobs:
       - name: Download latest BPB worker.js
         run: |
           mkdir -p functions/worker
-          curl -sSL -o temp_worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
+          curl -sSL -o functions/worker/worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
 
-          echo "export const onRequest = async (context) => {" > functions/worker/[index].js
-          echo "" >> functions/worker/[index].js
-          echo "// Begin original worker.js" >> functions/worker/[index].js
-          cat temp_worker.js >> functions/worker/[index].js
-          echo "" >> functions/worker/[index].js
-          echo "// End original worker.js" >> functions/worker/[index].js
-          echo "};" >> functions/worker/[index].js
+          # 生成 Functions 标准入口 [index].js
+          cat > functions/worker/[index].js << 'EOF'
+import workerCode from './worker.js';
 
-          rm temp_worker.js
+export const onRequest = async (context) => {
+  return await workerCode.fetch(context.request);
+};
+EOF
 
       - name: Commit and Push updated worker
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -44,4 +43,4 @@ jobs:
           commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          push_options: --force # 避免non-fast-forward错误
+          push_options: --force
