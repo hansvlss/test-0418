@@ -1,0 +1,30 @@
+name: Sync Latest BPB Worker.js
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 每天凌晨1点运行
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  sync-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出当前仓库代码
+        uses: actions/checkout@v4
+
+      - name: 下载最新的 worker.js
+        uses: robinraju/release-downloader@v1.12
+        with:
+          repository: 'bia-pain-bache/BPB-Worker-Panel'
+          latest: true
+          fileName: 'worker.js'
+          out-file-path: './'
+
+      - name: 提交更新的 worker.js
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: '🔄 同步最新的 worker.js'
+          branch: main
