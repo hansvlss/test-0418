@@ -1,30 +1,34 @@
-name: Sync Latest BPB Worker.js
+name: Sync and Deploy BPB Worker
 
 on:
+  workflow_dispatch:    # ✅ 允许手动触发
   schedule:
-    - cron: '0 1 * * *'  # 每天凌晨1点运行
-  workflow_dispatch:  # 允许手动触发
+    - cron: "0 1 * * *"  # ✅ 每天凌晨1点自动同步
 
 permissions:
   contents: write
 
 jobs:
-  sync-worker:
+  sync-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 检出当前仓库代码
+      - name: Checkout current repository
         uses: actions/checkout@v4
 
-      - name: 下载最新的 worker.js
-        uses: robinraju/release-downloader@v1.12
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v4
         with:
-          repository: 'bia-pain-bache/BPB-Worker-Panel'
-          latest: true
-          fileName: 'worker.js'
-          out-file-path: './'
+          node-version: "lts/*"
 
-      - name: 提交更新的 worker.js
+      - name: Download latest BPB worker.js
+        run: |
+          mkdir -p functions
+          curl -L -o functions/index.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
+
+      - name: Commit and Push updated worker
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: '🔄 同步最新的 worker.js'
+          commit_message: "🔄 Sync latest BPB worker to /functions/index.js"
           branch: main
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
