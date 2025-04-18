@@ -1,9 +1,9 @@
 name: Sync and Deploy BPB Worker
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 手动同步按钮
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 1 * * *" # 每天凌晨1点同步
 
 permissions:
   contents: write
@@ -15,8 +15,10 @@ jobs:
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 保证能正确拉取历史
 
-      - name: Set up environment
+      - name: Set up Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
@@ -24,16 +26,16 @@ jobs:
       - name: Download latest BPB worker.js
         run: |
           mkdir -p functions/worker
-          curl -L -o temp_worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
-          
-          # 包一层标准 Cloudflare Functions 格式
+          curl -sSL -o temp_worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
+
           echo "export const onRequest = async (context) => {" > functions/worker/[index].js
           echo "" >> functions/worker/[index].js
           echo "// Begin original worker.js" >> functions/worker/[index].js
           cat temp_worker.js >> functions/worker/[index].js
+          echo "" >> functions/worker/[index].js
           echo "// End original worker.js" >> functions/worker/[index].js
           echo "};" >> functions/worker/[index].js
-          
+
           rm temp_worker.js
 
       - name: Commit and Push updated worker
@@ -42,5 +44,4 @@ jobs:
           commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          # 👇👇👇加上下面这句！
-          push_options: --force
+          push_options: --force # 避免non-fast-forward错误
