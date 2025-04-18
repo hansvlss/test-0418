@@ -26,10 +26,9 @@ jobs:
           mkdir -p functions/worker
           curl -L -o temp_worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
           
-          # 包一层标准Cloudflare Functions格式
+          # 包一层标准 Cloudflare Functions 格式
           echo "export const onRequest = async (context) => {" > functions/worker/[index].js
-          echo "  " >> functions/worker/[index].js
-          echo "  " >> functions/worker/[index].js
+          echo "" >> functions/worker/[index].js
           echo "// Begin original worker.js" >> functions/worker/[index].js
           cat temp_worker.js >> functions/worker/[index].js
           echo "// End original worker.js" >> functions/worker/[index].js
@@ -43,3 +42,5 @@ jobs:
           commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          # 👇👇👇加上下面这句！
+          push_options: --force
