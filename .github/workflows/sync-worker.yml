@@ -1,9 +1,9 @@
 name: Sync and Deploy BPB Worker
 
 on:
-  workflow_dispatch: # 支持手动运行
+  workflow_dispatch: # 支持手动触发
   schedule:
-    - cron: "0 1 * * *" # 每天凌晨1点自动同步
+    - cron: "0 1 * * *" # 每天凌晨 1 点定时同步
 
 permissions:
   contents: write
@@ -32,15 +32,18 @@ jobs:
           cat > functions/worker/[index].js << 'EOF'
 import workerCode from './worker.js';
 
-export const onRequest = async (context) => {
-  return await workerCode.fetch(context.request);
+export const onRequest = async ({ request }) => {
+  return await workerCode.fetch(request);
 };
 EOF
 
-      - name: Commit and Push updated worker
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
-          branch: main
-          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          push_options: --force
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and Push changes
+        run: |
+          git add functions/worker
+          git commit -m "🔄 Sync BPB worker.js and wrap into Functions" || echo "No changes to commit"
+          git push origin main --force
